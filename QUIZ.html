@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>cyberquiz-asgelh.com</title>
+  <style>
+    body, html {
+      #author-tag {
+  position: fixed;
+  top: 10px;
+  left: 15px;
+  font-size: 14px;
+  color: #00ff99;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+	  margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      color: #00ff99;
+      background: black;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    .quiz-container {
+      position: relative;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 30px;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 12px;
+      box-shadow: 0 0 15px #00ff99;
+      z-index: 1;
+    }
+
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+
+    .option {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      background-color: #00334d;
+      border: none;
+      border-radius: 8px;
+      color: #00ffaa;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: left;
+    }
+
+    .option:hover {
+      background-color: #005566;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 1.3em;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    #next-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      background: #00ff99;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: black;
+    }
+
+    #score-section {
+      text-align: center;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+<div id="author-tag">© Yvan Thiam</div>
+<canvas id="matrix-canvas"></canvas>
+
+<div class="quiz-container" id="quiz-box">
+  <div class="question" id="question-text"></div>
+  <div id="options-container"></div>
+  <button id="next-btn" onclick="nextQuestion()">Suivant</button>
+  <div id="score-section"></div>
+</div>
+
+<script>
+  // Animation Matrix
+  const canvas = document.getElementById("matrix-canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+
+  const columns = Math.floor(canvas.width / 20);
+  const drops = Array(columns).fill(1);
+
+  function drawMatrix() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00FF00";
+    ctx.font = "16px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+      ctx.fillText(text, i * 20, drops[i] * 20);
+      if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+  setInterval(drawMatrix, 50);
+
+  // Quiz
+  const questions = [
+    { q: "Que signifie le mot 'phishing' ?", options: ["Pêcher en ligne", "Une attaque par email", "Un antivirus", "Un pare-feu"], answer: 1 },
+    { q: "Un mot de passe sécurisé contient :", options: ["Nom + Date de naissance", "Seulement des chiffres", "8+ caractères mixtes", "123456"], answer: 2 },
+    { q: "Quel est le rôle d’un pare-feu ?", options: ["Éteindre l’ordinateur", "Bloquer les logiciels malveillants", "Empêcher les connexions non autorisées", "Accélérer Internet"], answer: 2 },
+    { q: "HTTPS signifie :", options: ["HyperText Transfer Protocol Secure", "Hyper Tracker Tool", "Secure HTML", "Hack Transfer Protocol System"], answer: 0 },
+    { q: "Le ransomware est :", options: ["Un jeu", "Un type de malware", "Un antivirus", "Un logiciel de sécurité"], answer: 1 },
+    // Ajoute ici jusqu’à 50 questions
+  ];
+
+  // Générer des questions fictives (jusqu'à 50)
+  while (questions.length < 50) {
+    questions.push({
+      q: `Question cybersécurité #${questions.length + 1}`,
+      options: ["Réponse A", "Réponse B", "Réponse C", "Réponse D"],
+      answer: Math.floor(Math.random() * 4)
+    });
+  }
+
+  let currentQuestion = 0;
+  let score = 0;
+
+  function showQuestion() {
+    const q = questions[currentQuestion];
+    document.getElementById("question-text").textContent = `${currentQuestion + 1}. ${q.q}`;
+
+    const container = document.getElementById("options-container");
+    container.innerHTML = "";
+
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = opt;
+      btn.onclick = () => selectAnswer(i);
+      container.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(selected) {
+    const correct = questions[currentQuestion].answer;
+    if (selected === correct) score++;
+
+    document.querySelectorAll(".option").forEach((btn, i) => {
+      btn.disabled = true;
+      if (i === correct) btn.style.backgroundColor = "#009900";
+      else if (i === selected) btn.style.backgroundColor = "#990000";
+    });
+  }
+
+  function nextQuestion() {
+    currentQuestion++;
+    if (currentQuestion < questions.length) {
+      showQuestion();
+    } else {
+      showScore();
+    }
+  }
+
+  function showScore() {
+    document.getElementById("question-text").style.display = "none";
+    document.getElementById("options-container").style.display = "none";
+    document.getElementById("next-btn").style.display = "none";
+
+    const scoreBox = document.getElementById("score-section");
+    scoreBox.innerHTML = `<div class="result">🎉 Vous avez obtenu ${score} / ${questions.length} !</div>`;
+    localStorage.setItem("cyberquiz_score", score);
+  }
+
+  // Lancer le quiz
+  showQuestion();
+</script>
+
+</body>
+</html>
